@@ -13,7 +13,7 @@ const SCROLL_NUM = 2;
 
 const MAX_TIME_DIFF = 1000 / 15;
 
-const FPS = 30;
+const FPS = 60;
 
 const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById(
   "canvas"
@@ -28,22 +28,23 @@ context.lineWidth = SQUARE_DIAGONAL;
 
 let row = 0;
 let col = 0;
+let chars = 0;
 let steps = 0;
 let offset = 0;
 
-let currRealTime = 0;
-let prevRealTime = 0;
-let wastedRealTime = 0;
-
-let prevSimTime = 0;
-let currSimTime = 0;
+let currTime = 0;
+let prevTime = 0;
+let wastedTime = 0;
+let targetChars = 0;
 
 context.font = "32px serif";
 
-let speed = () => 200 * Math.max(0, Math.cos(currRealTime / 240));
+//let speed = () => 200 * Math.max(0, Math.cos(steps / 20));
+let speed = () => 100 * (1 + Math.cos(steps / 20));
+//let speed = () => 1;
 //let prob = () => Math.random() > 0.5;
 //let prob = () => Math.sin(row + col * Math.cos(steps / 1e5)) > 0;
-let prob = () => Math.tan((steps / 500) * (steps / 1000)) > 0;
+let prob = () => Math.tan((chars / 500) * (chars / 1000)) > 0;
 
 const drawChar = (side, x, y) => {
   const corners = side
@@ -89,47 +90,55 @@ context.fillRect(
 context.fillStyle = "white";
 
 const loop = (totalTime = 0) => {
-  let timeDiff = totalTime - (prevRealTime + wastedRealTime);
+  let timeDiff = totalTime - (prevTime + wastedTime);
   if (timeDiff > MAX_TIME_DIFF) {
-    wastedRealTime += timeDiff - MAX_TIME_DIFF;
+    wastedTime += timeDiff - MAX_TIME_DIFF;
     // recalculate the difference in time
-    timeDiff = totalTime - (prevRealTime + wastedRealTime);
+    timeDiff = totalTime - (prevTime + wastedTime);
   }
-  currRealTime += timeDiff;
-  currSimTime += timeDiff * speed();
-  console.log(speed());
+  currTime += timeDiff;
+  // TODO this needs to change
+  //currSimTime += timeDiff * speed();
+  //console.log(speed());
   //console.log(timeDiff);
-  const prevSteps = Math.floor(prevSimTime / 1000);
-  const currSteps = Math.floor(currSimTime / 1000);
+  //const prevSteps = Math.floor(prevSimTime / 1000);
+  //const currSteps = Math.floor(currSimTime / 1000);
   //console.log(prevSteps);
   //console.log(currSteps);
   //console.log("prev - curr " + (currSteps - prevSteps));
 
-  for (let i = prevSteps; i < currSteps; i++) {
-    col = steps % SCREEN_COLUMNS;
-    row = Math.floor(steps / SCREEN_COLUMNS);
-    drawChar(
-      prob(),
-      ((steps - offset) % SCREEN_COLUMNS) * CHAR_WIDTH,
-      Math.floor((i - offset) / SCREEN_COLUMNS) * CHAR_HEIGHT
-    );
-    steps++;
-    // scroll the screen up if needed
-    if (steps - offset === SCREEN_ROWS * SCREEN_COLUMNS) {
-      offset += SCREEN_COLUMNS * SCROLL_NUM;
-      context.drawImage(canvas, 0, -SCROLL_NUM * CHAR_HEIGHT);
-      context.fillStyle = "black";
-      context.fillRect(
-        0,
-        (SCREEN_ROWS - SCROLL_NUM) * CHAR_HEIGHT,
-        SCREEN_COLUMNS * CHAR_WIDTH,
-        SCREEN_ROWS * CHAR_HEIGHT
+  while ((steps / FPS) * 1000 < currTime) {
+    targetChars += speed() / FPS;
+    console.log("target chars " + targetChars);
+    while (chars < targetChars) {
+      //for (let i = prevSteps; i < currSteps; i++) {
+      col = chars % SCREEN_COLUMNS;
+      row = Math.floor(chars / SCREEN_COLUMNS);
+      drawChar(
+        prob(),
+        ((chars - offset) % SCREEN_COLUMNS) * CHAR_WIDTH,
+        Math.floor((chars - offset) / SCREEN_COLUMNS) * CHAR_HEIGHT
       );
-      context.fillStyle = "white";
+      chars++;
+      // scroll the screen up if needed
+      if (chars - offset === SCREEN_ROWS * SCREEN_COLUMNS) {
+        offset += SCREEN_COLUMNS * SCROLL_NUM;
+        context.drawImage(canvas, 0, -SCROLL_NUM * CHAR_HEIGHT);
+        context.fillStyle = "black";
+        context.fillRect(
+          0,
+          (SCREEN_ROWS - SCROLL_NUM) * CHAR_HEIGHT,
+          SCREEN_COLUMNS * CHAR_WIDTH,
+          SCREEN_ROWS * CHAR_HEIGHT
+        );
+        context.fillStyle = "white";
+      }
     }
+    steps++;
+    console.log("steps " + steps);
   }
-  prevRealTime = currRealTime;
-  prevSimTime = currSimTime;
+  prevTime = currTime;
+  console.log("currTime" + currTime);
   requestAnimationFrame(loop);
 };
 
