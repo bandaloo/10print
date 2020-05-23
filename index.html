@@ -34,7 +34,6 @@
       .fixedwidth {
         min-width: 150px;
         padding: 0px;
-        border: 1px solid blue;
         display: inline-block;
       }
 
@@ -46,12 +45,13 @@
   </head>
   <body>
     <div class="center tabs">
+      <span id="speed" class="info"></span>
+      <span id="side" class="info right"></span>
       <canvas id="canvas" width="1280" height="800"></canvas>
-      <span id="speed" class="info fixedwidth"></span>
-      <span id="func" class="info fixedwidth"></span>
-      <span id="row" class="info fixedwidth right"></span>
-      <span id="col" class="info fixedwidth right"></span>
-      <span id="step" class="info fixedwidth right"></span>
+      <span id="row" class="info fixedwidth"></span>
+      <span id="col" class="info fixedwidth"></span>
+      <span id="step" class="info fixedwidth"></span>
+      <span id="char" class="info fixedwidth"></span>
     </div>
   </body>
   <script src="10print.js"></script>

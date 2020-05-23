@@ -1,3 +1,5 @@
+"use strict";
+
 // no onload event listener needed since script is at bottom of page
 
 const CHAR_WIDTH = 32;
@@ -13,7 +15,7 @@ const SCROLL_NUM = 2;
 
 const MAX_TIME_DIFF = 1000 / 15;
 
-const FPS = 60;
+const FPS = 240;
 
 const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById(
   "canvas"
@@ -21,17 +23,18 @@ const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById(
 
 const context = canvas.getContext("2d");
 
-//context.textBaseline = "top";
-//context.textAlign = "start";
+// style for lines
 context.strokeStyle = "white";
 context.lineWidth = SQUARE_DIAGONAL;
 
+// time varying values
 let row = 0;
 let col = 0;
 let chars = 0;
 let steps = 0;
 let offset = 0;
 
+// for keeping track of time
 let currTime = 0;
 let prevTime = 0;
 let wastedTime = 0;
@@ -39,13 +42,88 @@ let targetChars = 0;
 
 context.font = "32px serif";
 
-//let speed = () => 200 * Math.max(0, Math.cos(steps / 20));
-let speed = () => 100 * (1 + Math.cos(steps / 20));
-//let speed = () => 1;
-//let prob = () => Math.random() > 0.5;
-//let prob = () => Math.sin(row + col * Math.cos(steps / 1e5)) > 0;
-let prob = () => Math.tan((chars / 500) * (chars / 1000)) > 0;
+/** @type {() => number} */
+let speed;
+/** @type {() => boolean} */
+let prob;
 
+/**
+ * @typedef {Object} Phase
+ * @property {number} start
+ * @property {() => number} speedFunc
+ * @property {() => boolean} probFunc
+ */
+
+/** @type {Phase[]} */
+const timeline = [];
+
+const pStart = () => {
+  return timeline[timeIndex - 1].start;
+};
+
+const pSteps = () => {
+  return steps - timeline[timeIndex - 1].start;
+};
+
+timeline.push({
+  start: 0,
+  speedFunc: () => (pSteps() / 16) * (1 + Math.cos(steps / 80)),
+  probFunc: () => Math.random() > 0.5,
+});
+
+timeline.push({
+  start: 3000,
+  speedFunc: () => 300,
+  probFunc: () => Math.cos(steps) > 0,
+});
+
+timeline.push({
+  start: 5000,
+  speedFunc: () => 400,
+  probFunc: () => Math.cos(steps + row * col) > 0,
+});
+
+timeline.push({
+  start: 10000,
+  speedFunc: () => 500,
+  probFunc: () => Math.tan(steps) > 0,
+});
+
+timeline.push({
+  start: 10000,
+  speedFunc: () => 500,
+  probFunc: () => Math.tan(steps + row * col) > 0,
+});
+
+timeline.push({
+  start: 15000,
+  speedFunc: () => 3000,
+  probFunc: () => Math.cos((row * col) / 400) > 0,
+});
+
+timeline.push({
+  start: 17000,
+  speedFunc: () => (Math.cos(steps / 80) + 1) * 700,
+  probFunc: () => ((chars / 2000) * (row + col)) % 20 < 10,
+});
+
+timeline.sort((p1, p2) => p1.start - p2.start);
+console.log(timeline);
+
+let timeIndex = 0;
+
+const speedSpan = document.getElementById("speed");
+const sideSpan = document.getElementById("side");
+const rowSpan = document.getElementById("row");
+const colSpan = document.getElementById("col");
+const stepSpan = document.getElementById("step");
+const charSpan = document.getElementById("char");
+
+/**
+ * @param {boolean} side
+ * @param {number} x
+ * @param {number} y
+ */
 const drawChar = (side, x, y) => {
   const corners = side
     ? {
@@ -97,21 +175,17 @@ const loop = (totalTime = 0) => {
     timeDiff = totalTime - (prevTime + wastedTime);
   }
   currTime += timeDiff;
-  // TODO this needs to change
-  //currSimTime += timeDiff * speed();
-  //console.log(speed());
-  //console.log(timeDiff);
-  //const prevSteps = Math.floor(prevSimTime / 1000);
-  //const currSteps = Math.floor(currSimTime / 1000);
-  //console.log(prevSteps);
-  //console.log(currSteps);
-  //console.log("prev - curr " + (currSteps - prevSteps));
 
   while ((steps / FPS) * 1000 < currTime) {
+    if (timeIndex < timeline.length && steps >= timeline[timeIndex].start) {
+      speed = timeline[timeIndex].speedFunc;
+      prob = timeline[timeIndex].probFunc;
+      speedSpan.innerText = "speed: " + speed;
+      sideSpan.innerText = "prob: " + prob;
+      timeIndex++;
+    }
     targetChars += speed() / FPS;
-    console.log("target chars " + targetChars);
     while (chars < targetChars) {
-      //for (let i = prevSteps; i < currSteps; i++) {
       col = chars % SCREEN_COLUMNS;
       row = Math.floor(chars / SCREEN_COLUMNS);
       drawChar(
@@ -135,10 +209,15 @@ const loop = (totalTime = 0) => {
       }
     }
     steps++;
-    console.log("steps " + steps);
   }
   prevTime = currTime;
-  console.log("currTime" + currTime);
+
+  // update ui
+  charSpan.innerText = "char: " + chars;
+  rowSpan.innerText = "row: " + row;
+  colSpan.innerText = "col: " + col;
+  stepSpan.innerText = "step: " + steps;
+
   requestAnimationFrame(loop);
 };
 
