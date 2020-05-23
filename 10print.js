@@ -8,6 +8,8 @@ const CHAR_HEIGHT = 32;
 const SCREEN_ROWS = 25;
 const SCREEN_COLUMNS = 40;
 
+const LOOP_TIME = 22000;
+
 const SQUARE_SIZE = 4;
 const SQUARE_DIAGONAL = 4 * 2 ** 0.5;
 
@@ -62,12 +64,12 @@ const pStart = () => {
 };
 
 const pSteps = () => {
-  return steps - timeline[timeIndex - 1].start;
+  return (steps % LOOP_TIME) - timeline[timeIndex - 1].start;
 };
 
 timeline.push({
   start: 0,
-  speedFunc: () => (pSteps() / 16) * (1 + Math.cos(steps / 80)),
+  speedFunc: () => (pSteps() / 16) * (1 + Math.cos(pSteps() / 80)),
   probFunc: () => Math.random() > 0.5,
 });
 
@@ -90,12 +92,6 @@ timeline.push({
 });
 
 timeline.push({
-  start: 10000,
-  speedFunc: () => 500,
-  probFunc: () => Math.tan(steps + row * col) > 0,
-});
-
-timeline.push({
   start: 15000,
   speedFunc: () => 3000,
   probFunc: () => Math.cos((row * col) / 400) > 0,
@@ -108,7 +104,6 @@ timeline.push({
 });
 
 timeline.sort((p1, p2) => p1.start - p2.start);
-console.log(timeline);
 
 let timeIndex = 0;
 
@@ -177,13 +172,20 @@ const loop = (totalTime = 0) => {
   currTime += timeDiff;
 
   while ((steps / FPS) * 1000 < currTime) {
-    if (timeIndex < timeline.length && steps >= timeline[timeIndex].start) {
+    if (steps % LOOP_TIME === 0) {
+      timeIndex = 0;
+    }
+    if (
+      timeIndex < timeline.length &&
+      steps % LOOP_TIME >= timeline[timeIndex].start
+    ) {
       speed = timeline[timeIndex].speedFunc;
       prob = timeline[timeIndex].probFunc;
       speedSpan.innerText = "speed: " + speed;
       sideSpan.innerText = "prob: " + prob;
       timeIndex++;
     }
+    console.log(timeIndex);
     targetChars += speed() / FPS;
     while (chars < targetChars) {
       col = chars % SCREEN_COLUMNS;
