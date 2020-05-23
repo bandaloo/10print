@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <style>
+      canvas {
+        border: 2px solid white;
+      }
+
+      body {
+        background-color: black;
+      }
+
+      .center {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .info {
+        background-color: transparent;
+        color: white;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 16pt;
+      }
+
+      .right {
+        text-align: right;
+        float: right;
+      }
+
+      .fixedwidth {
+        min-width: 150px;
+        padding: 0px;
+        border: 1px solid blue;
+        display: inline-block;
+      }
+
+      .tabs {
+        /* this gets rid of tiny space between spans as a result of \n */
+        font-size: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center tabs">
+      <canvas id="canvas" width="1280" height="800"></canvas>
+      <span id="speed" class="info fixedwidth"></span>
+      <span id="func" class="info fixedwidth"></span>
+      <span id="row" class="info fixedwidth right"></span>
+      <span id="col" class="info fixedwidth right"></span>
+      <span id="step" class="info fixedwidth right"></span>
+    </div>
+  </body>
+  <script src="10print.js"></script>
+</html>
